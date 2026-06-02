@@ -19,7 +19,7 @@ export default function ModulePage() {
   const module = modulesData.find(m => m.id === params.id)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }: { data: { user: any } }) => {
       if (user) {
         const { data } = await supabase.from('users').select('status').eq('id', user.id).single()
         setUserStatus(data?.status || 'free')

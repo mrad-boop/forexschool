@@ -1,20 +1,30 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 
 export default function CertificatePage() {
-  const [user, setUser] = useState<any>(null)
+  const [studentName, setStudentName] = useState('Étudiant')
   const [date] = useState(new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }))
-  const supabase = createClient()
+  const [certId] = useState(() => Math.random().toString(36).substr(2, 8).toUpperCase())
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
+    // Load user only on client side - avoid Supabase during SSR/build
+    const loadUser = async () => {
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user?.email) {
+          setStudentName(user.email.split('@')[0])
+        }
+      } catch (e) {
+        // silently fail if no supabase config
+      }
+    }
+    loadUser()
   }, [])
 
   const handlePrint = () => window.print()
-
-  const studentName = user?.email?.split('@')[0] || 'Étudiant'
 
   return (
     <>
@@ -27,20 +37,17 @@ export default function CertificatePage() {
             </button>
           </div>
 
-          {/* Certificate */}
           <div id="certificate" style={{
             background: 'white', borderRadius: 20, padding: '4rem',
             boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
             border: '8px solid #0070BA',
             position: 'relative', overflow: 'hidden', textAlign: 'center'
           }}>
-            {/* Decorative corners */}
             <div style={{ position: 'absolute', top: 20, left: 20, width: 60, height: 60, border: '3px solid #E8F4FD', borderRight: 'none', borderBottom: 'none' }}></div>
             <div style={{ position: 'absolute', top: 20, right: 20, width: 60, height: 60, border: '3px solid #E8F4FD', borderLeft: 'none', borderBottom: 'none' }}></div>
             <div style={{ position: 'absolute', bottom: 20, left: 20, width: 60, height: 60, border: '3px solid #E8F4FD', borderRight: 'none', borderTop: 'none' }}></div>
             <div style={{ position: 'absolute', bottom: 20, right: 20, width: 60, height: 60, border: '3px solid #E8F4FD', borderLeft: 'none', borderTop: 'none' }}></div>
 
-            {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: '2rem' }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #0070BA, #003087)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ color: 'white', fontWeight: 900, fontSize: 24 }}>F</span>
@@ -91,7 +98,7 @@ export default function CertificatePage() {
               <div style={{ textAlign: 'right' }}>
                 <p style={{ fontSize: '0.875rem', color: '#94A3B8' }}>Numéro de certificat</p>
                 <p style={{ fontWeight: 700, color: '#1E293B', fontFamily: 'monospace', fontSize: '0.875rem' }}>
-                  FS-{Math.random().toString(36).substr(2, 8).toUpperCase()}
+                  FS-{certId}
                 </p>
               </div>
             </div>

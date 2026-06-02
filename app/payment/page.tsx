@@ -22,7 +22,7 @@ export default function PaymentPage() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
+    supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => setUser(user))
   }, [])
 
   const handleSubmitPayment = async () => {
