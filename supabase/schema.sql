@@ -98,3 +98,25 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============ ADMIN SUPPORT ============
+-- Add is_admin flag to users
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
+
+-- Admin can read all users
+DROP POLICY IF EXISTS "Admins can read all users" ON public.users;
+CREATE POLICY "Admins can read all users" ON public.users FOR SELECT
+  USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.is_admin = TRUE));
+
+-- Admin can update any user
+DROP POLICY IF EXISTS "Admins can update all users" ON public.users;
+CREATE POLICY "Admins can update all users" ON public.users FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.is_admin = TRUE));
+
+-- Admin can read all payments
+DROP POLICY IF EXISTS "Admins can read all payments" ON public.payments;
+CREATE POLICY "Admins can read all payments" ON public.payments FOR SELECT
+  USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.is_admin = TRUE));
+
+-- To make yourself admin, run manually in SQL editor:
+-- UPDATE public.users SET is_admin = TRUE WHERE email = 'votre@email.com';

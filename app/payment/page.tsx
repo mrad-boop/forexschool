@@ -12,6 +12,7 @@ type Step = 'intro' | 'paying' | 'success'
 export default function PaymentPage() {
   const [step, setStep] = useState<Step>('intro')
   const [user, setUser] = useState<any>(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [payment, setPayment] = useState<{ address: string; btcAmount: string; btcPrice: number } | null>(null)
@@ -24,7 +25,7 @@ export default function PaymentPage() {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => setUser(user))
+    supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => { setUser(user); setAuthChecked(true) })
   }, [])
 
   // Countdown timer
@@ -70,7 +71,25 @@ export default function PaymentPage() {
     }
   }
 
+  const isEmailVerified = !!(user?.email_confirmed_at || user?.confirmed_at)
+
+  const resendVerification = async () => {
+    if (!user?.email) return
+    setLoading(true); setError('')
+    const { error } = await supabase.auth.resend({ type: 'signup', email: user.email })
+    if (error) setError(error.message)
+    else setError('')
+    setLoading(false)
+  }
+
+  const recheckAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    setUser(user)
+  }
+
   const startPayment = async () => {
+    if (!user) { setError('Vous devez être connecté pour effectuer un paiement.'); return }
+    if (!isEmailVerified) { setError('Veuillez confirmer votre adresse email avant de payer. Vérifiez votre boîte de réception.'); return }
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/payment/create', {
@@ -140,15 +159,41 @@ export default function PaymentPage() {
 
                 {error && <div style={{ background: '#FEE2E2', color: '#DC2626', padding: '0.75rem 1rem', borderRadius: 10, fontSize: '0.875rem', marginBottom: '1rem' }}>{error}</div>}
 
-                {!user && (
-                  <div style={{ background: '#FEF3C7', color: '#92400E', padding: '0.75rem 1rem', borderRadius: 10, fontSize: '0.875rem', marginBottom: '1rem' }}>
-                    ⚠️ <Link href="/login" style={{ color: '#92400E', fontWeight: 700 }}>Connectez-vous</Link> pour que l'accès soit activé automatiquement après paiement.
+                {/* Not logged in */}
+                {authChecked && !user && (
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ background: '#FEF3C7', color: '#92400E', padding: '1rem', borderRadius: 12, fontSize: '0.875rem', marginBottom: '1rem', lineHeight: 1.6 }}>
+                      🔒 <strong>Connexion requise.</strong><br />
+                      Vous devez être connecté et avoir vérifié votre email pour effectuer un paiement sécurisé.
+                    </div>
+                    <Link href="/login" className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem' }}>
+                      Se connecter / S'inscrire
+                    </Link>
                   </div>
                 )}
 
-                <button onClick={startPayment} disabled={loading} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem', opacity: loading ? 0.6 : 1 }}>
-                  {loading ? '⏳ Génération de l\'adresse...' : '₿ Payer en Bitcoin'}
-                </button>
+                {/* Logged in but email not verified */}
+                {authChecked && user && !isEmailVerified && (
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ background: '#FEF3C7', color: '#92400E', padding: '1rem', borderRadius: 12, fontSize: '0.875rem', marginBottom: '1rem', lineHeight: 1.6 }}>
+                      📧 <strong>Vérifiez votre email.</strong><br />
+                      Un lien de confirmation a été envoyé à <strong>{user.email}</strong>. Cliquez dessus avant de payer.
+                    </div>
+                    <button onClick={resendVerification} disabled={loading} style={{ width: '100%', padding: '0.875rem', borderRadius: 9999, border: '2px solid #0070BA', background: 'white', color: '#0070BA', fontWeight: 600, cursor: 'pointer', fontSize: '0.9375rem', marginBottom: 8 }}>
+                      {loading ? '⏳ Envoi...' : '📨 Renvoyer l\'email de vérification'}
+                    </button>
+                    <button onClick={recheckAuth} style={{ width: '100%', padding: '0.625rem', borderRadius: 9999, border: 'none', background: 'transparent', color: '#64748B', fontWeight: 600, cursor: 'pointer', fontSize: '0.8125rem' }}>
+                      ↻ J'ai déjà vérifié — Rafraîchir
+                    </button>
+                  </div>
+                )}
+
+                {/* Logged in + verified */}
+                {authChecked && user && isEmailVerified && (
+                  <button onClick={startPayment} disabled={loading} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem', opacity: loading ? 0.6 : 1 }}>
+                    {loading ? '⏳ Génération de l\'adresse...' : '₿ Payer en Bitcoin'}
+                  </button>
+                )}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: '1rem', justifyContent: 'center' }}>
                   <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Paiement sécurisé via</span>
