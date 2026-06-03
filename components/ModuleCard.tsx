@@ -16,7 +16,7 @@ interface ModuleCardProps {
 }
 
 export default function ModuleCard({ module, userStatus }: ModuleCardProps) {
-  const isLocked = module.type === 'premium' && userStatus !== 'premium'
+  const isPremiumUser = userStatus === 'premium'
 
   const categoryColors: Record<string, string> = {
     'Forex & Crypto': '#0070BA',
@@ -30,7 +30,7 @@ export default function ModuleCard({ module, userStatus }: ModuleCardProps) {
   return (
     <div className="card" style={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Toujours visible : catégorie, badge, titre, niveau, durée ── */}
+      {/* Header — always visible */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <span style={{
           background: `${color}15`, color,
@@ -39,9 +39,11 @@ export default function ModuleCard({ module, userStatus }: ModuleCardProps) {
         }}>
           {module.category}
         </span>
-        <span className={module.type === 'free' ? 'badge-free' : 'badge-premium'}>
-          {module.type === 'free' ? '✓ Gratuit' : '⭐ Premium'}
-        </span>
+        {isPremiumUser ? (
+          <span className="badge-premium">⭐ Débloqué</span>
+        ) : (
+          <span className="badge-free">👁 Aperçu</span>
+        )}
       </div>
 
       <h3 style={{ fontWeight: 700, fontSize: '1rem', color: '#1E293B', marginBottom: 10, lineHeight: 1.4 }}>
@@ -53,42 +55,36 @@ export default function ModuleCard({ module, userStatus }: ModuleCardProps) {
         <span>⏱ {module.duration_hours}h de contenu</span>
       </div>
 
-      {/* ── Description : floue si verrouillé ── */}
-      <p style={{
-        fontSize: '0.875rem', color: '#64748B', lineHeight: 1.6,
-        marginBottom: 16, flex: 1,
-        filter: isLocked ? 'blur(4px)' : 'none',
-        userSelect: isLocked ? 'none' : 'auto',
-        transition: 'filter 0.2s'
-      }}>
+      <p style={{ fontSize: '0.875rem', color: '#64748B', lineHeight: 1.6, marginBottom: 16, flex: 1 }}>
         {module.description}
       </p>
 
-      {/* ── Bouton selon état ── */}
-      {isLocked ? (
-        <div style={{
-          borderTop: '1px solid #F1F5F9', paddingTop: 14,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#94A3B8', fontSize: '0.8125rem', fontWeight: 600 }}>
-            <span>🔒</span> Contenu Premium
-          </div>
-          <Link
-            href="/payment"
-            className="btn-primary"
-            style={{ fontSize: '0.8125rem', padding: '0.5rem 1.25rem', width: '100%', justifyContent: 'center' }}
-          >
-            Débloquer – 49 USDT
-          </Link>
-        </div>
-      ) : (
+      {/* Button */}
+      {isPremiumUser ? (
         <Link
           href={`/module/${module.id}`}
           className="btn-secondary"
           style={{ fontSize: '0.875rem', padding: '0.5rem 1.25rem', width: '100%', justifyContent: 'center' }}
         >
-          Commencer le module →
+          Accéder au module →
         </Link>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Link
+            href={`/module/${module.id}`}
+            className="btn-secondary"
+            style={{ fontSize: '0.8125rem', padding: '0.5rem 1.25rem', width: '100%', justifyContent: 'center' }}
+          >
+            👁 Voir l'aperçu gratuit
+          </Link>
+          <Link
+            href="/payment"
+            className="btn-primary"
+            style={{ fontSize: '0.8125rem', padding: '0.5rem 1.25rem', width: '100%', justifyContent: 'center' }}
+          >
+            🔓 Abonnez-vous – 49 USDT
+          </Link>
+        </div>
       )}
     </div>
   )

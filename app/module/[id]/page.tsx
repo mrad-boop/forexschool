@@ -10,6 +10,7 @@ import InlineQuiz from '@/components/modules/InlineQuiz'
 import ProgressSection from '@/components/modules/ProgressSection'
 import RiskCalculator from '@/components/modules/RiskCalculator'
 import VideoEmbed from '@/components/modules/VideoEmbed'
+import PremiumGate from '@/components/modules/PremiumGate'
 import ConceptCard from '@/components/modules/ConceptCard'
 
 // Rich pages exist for these — Next.js routes to them automatically
@@ -89,8 +90,7 @@ export default function GenericModulePage() {
     </div>
   )
 
-  const isLocked = module.type === 'premium' && userStatus !== 'premium'
-  const showFull = module.type === 'free' || userStatus === 'premium'
+  const showFull = userStatus === 'premium'
   const quiz = quizByModule[module.id] || []
   const video = videoByModule[module.id]
   const m = module as any
@@ -127,21 +127,24 @@ export default function GenericModulePage() {
 
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 1.5rem' }}>
 
-          {!isLocked && <ProgressSection sections={sections} moduleId={module.id} />}
+          {showFull && <ProgressSection sections={sections} moduleId={module.id} />}
 
-          {/* Preview always shown */}
-          {video && !isLocked && (
-            <VideoEmbed videoId={video.id} title={video.title} duration={video.duration} description={`Vidéo d'introduction au module ${module.title}`} />
-          )}
-
+          {/* FREE PREVIEW — short intro only, visible to everyone */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#E8F4FD', color: '#0070BA', padding: '0.25rem 0.875rem', borderRadius: 9999, fontSize: '0.8125rem', fontWeight: 700, marginBottom: '1rem' }}>
+            👁 Aperçu gratuit
+          </div>
           <div style={{ background: 'white', borderRadius: 20, padding: '2rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
             <RenderContent text={m.preview || module.content} />
           </div>
 
-          {showFull && m.preview && (
+          {/* FULL CONTENT — premium only */}
+          {showFull && (
             <>
+              {video && (
+                <VideoEmbed videoId={video.id} title={video.title} duration={video.duration} description={`Vidéo du module ${module.title}`} />
+              )}
               {module.id === 'forex-3' && (
-                <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ margin: '1.5rem 0' }}>
                   <RiskCalculator />
                 </div>
               )}
@@ -151,23 +154,8 @@ export default function GenericModulePage() {
             </>
           )}
 
-          {isLocked && (
-            <div style={{ background: `linear-gradient(135deg, ${color}EE, ${color})`, borderRadius: 20, padding: '2.5rem 2rem', textAlign: 'center', color: 'white', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: 48, marginBottom: '1rem' }}>🔒</div>
-              <h3 style={{ fontWeight: 800, fontSize: '1.375rem', marginBottom: 10 }}>Continuez avec l'accès Premium</h3>
-              <p style={{ opacity: 0.88, lineHeight: 1.7, marginBottom: '1.5rem', maxWidth: 480, margin: '0 auto 1.25rem' }}>
-                Ce module contient encore <strong>{module.duration_hours}h de contenu</strong>, des exercices pratiques, des outils interactifs et le quiz de certification.
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, margin: '1.25rem 0' }}>
-                <span style={{ fontSize: '2rem', fontWeight: 900 }}>49 USDT</span>
-                <span style={{ background: 'rgba(255,255,255,0.2)', padding: '0.25rem 0.75rem', borderRadius: 9999, textDecoration: 'line-through', opacity: 0.7, fontSize: '0.875rem' }}>499 USDT</span>
-              </div>
-              <Link href="/payment" style={{ background: 'white', color, padding: '0.875rem 2rem', borderRadius: 9999, fontWeight: 700, textDecoration: 'none', display: 'inline-block', fontSize: '1rem' }}>
-                🚀 Débloquer maintenant
-              </Link>
-              <p style={{ marginTop: '1rem', fontSize: '0.8125rem', opacity: 0.7 }}>✓ Paiement unique · ✓ Accès à vie · ✓ 12 modules + certificats</p>
-            </div>
-          )}
+          {/* PAYWALL — for everyone who is not premium */}
+          {!showFull && <PremiumGate hours={module.duration_hours} />}
 
           {showFull && quiz.length > 0 && (
             <InlineQuiz
