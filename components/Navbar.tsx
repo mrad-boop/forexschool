@@ -7,17 +7,12 @@ import { createClient } from '@/lib/supabase/client'
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [loggedIn, setLoggedIn] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }: { data: { user: any } }) => {
       setLoggedIn(!!user)
-      if (user) {
-        const { data } = await supabase.from('users').select('is_admin').eq('id', user.id).single()
-        setIsAdmin(!!data?.is_admin)
-      }
     })
   }, [])
 
@@ -46,7 +41,6 @@ export default function Navbar() {
             <>
               <Link href="/dashboard" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>Dashboard</Link>
               <Link href="/profile" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>👤 Profil</Link>
-              {isAdmin && <Link href="/forexschool-admin-2026" style={{ color: '#7C3AED', textDecoration: 'none', fontWeight: 700, fontSize: '0.9375rem' }}>⚙️ Admin</Link>}
               <button onClick={handleLogout} style={{ color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.9375rem' }}>
                 Déconnexion
               </button>
@@ -74,7 +68,6 @@ export default function Navbar() {
               <>
                 <Link href="/dashboard" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>Dashboard</Link>
                 <Link href="/profile" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>👤 Profil</Link>
-                {isAdmin && <Link href="/forexschool-admin-2026" style={{ color: '#7C3AED', textDecoration: 'none', fontWeight: 700, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>⚙️ Admin</Link>}
                 <button onClick={() => { setMenuOpen(false); handleLogout() }} style={{ color: '#DC2626', background: '#FEE2E2', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '0.75rem', borderRadius: 10, fontSize: '0.9375rem', textAlign: 'center' }}>
                   Déconnexion
                 </button>
