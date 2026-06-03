@@ -1,23 +1,25 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import QRCode from 'qrcode'
 import { createClient } from '@/lib/supabase/client'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
-const USDT_ADDRESS = 'TYourUSDTAddressHere'
-const BTC_ADDRESS = 'YourBTCAddressHere'
-const AMOUNT_USDT = 49
-const AMOUNT_USD = 49
+type Step = 'intro' | 'paying' | 'success'
 
 export default function PaymentPage() {
+  const [step, setStep] = useState<Step>('intro')
   const [user, setUser] = useState<any>(null)
-  const [step, setStep] = useState<'select' | 'pay' | 'confirm'>('select')
-  const [currency, setCurrency] = useState<'USDT' | 'BTC'>('USDT')
-  const [txHash, setTxHash] = useState('')
   const [loading, setLoading] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
+  const [payment, setPayment] = useState<{ address: string; btcAmount: string; btcPrice: number } | null>(null)
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  const [status, setStatus] = useState<'pending' | 'detected' | 'confirmed'>('pending')
+  const [timeLeft, setTimeLeft] = useState(900) // 15 min
+  const [copied, setCopied] = useState(false)
+  const pollRef = useRef<NodeJS.Timeout | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -25,33 +27,93 @@ export default function PaymentPage() {
     supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => setUser(user))
   }, [])
 
-  const handleSubmitPayment = async () => {
-    if (!txHash || txHash.length < 20) return
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
+  // Countdown timer
+  useEffect(() => {
+    if (step !== 'paying' || timeLeft <= 0) return
+    const t = setInterval(() => setTimeLeft(s => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(t)
+  }, [step, timeLeft])
 
-    if (user) {
+  // Poll payment status
+  useEffect(() => {
+    if (step !== 'paying' || !payment) return
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/payment/status?address=${payment.address}`)
+        const data = await res.json()
+        if (data.status === 'detected' && status === 'pending') {
+          setStatus('detected')
+        }
+        if (data.status === 'confirmed') {
+          setStatus('confirmed')
+          await activatePremium()
+          setStep('success')
+          if (pollRef.current) clearInterval(pollRef.current)
+        }
+      } catch {}
+    }
+
+    pollRef.current = setInterval(poll, 8000)
+    poll()
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [step, payment, status])
+
+  const activatePremium = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user && payment) {
       await supabase.from('payments').insert({
-        user_id: user.id, amount: AMOUNT_USDT, currency,
-        transaction_hash: txHash, status: 'pending'
+        user_id: user.id, amount: 49, currency: 'BTC',
+        transaction_hash: payment.address, status: 'confirmed'
       })
-      await supabase.from('users').upsert({ id: user.id, email: user.email, status: 'premium' })
-      setSubmitted(true)
-    } else {
-      localStorage.setItem('pending_payment', JSON.stringify({ txHash, currency, amount: AMOUNT_USDT }))
-      setSubmitted(true)
+      await supabase.from('users').update({ status: 'premium' }).eq('id', user.id)
+    }
+  }
+
+  const startPayment = async () => {
+    setLoading(true); setError('')
+    try {
+      const res = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id, email: user?.email })
+      })
+      const data = await res.json()
+      if (data.error) { setError(data.error); setLoading(false); return }
+
+      setPayment({ address: data.address, btcAmount: data.btcAmount, btcPrice: data.btcPrice })
+
+      // Generate QR code (BIP21 URI with amount)
+      const uri = `bitcoin:${data.address}?amount=${data.btcAmount}`
+      const qr = await QRCode.toDataURL(uri, { width: 280, margin: 1, color: { dark: '#0F172A', light: '#FFFFFF' } })
+      setQrDataUrl(qr)
+
+      setStep('paying')
+    } catch (e: any) {
+      setError('Erreur de connexion au système de paiement.')
     }
     setLoading(false)
   }
 
-  const address = currency === 'USDT' ? USDT_ADDRESS : BTC_ADDRESS
+  const copyAddress = () => {
+    if (payment) {
+      navigator.clipboard.writeText(payment.address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const mins = Math.floor(timeLeft / 60)
+  const secs = timeLeft % 60
 
   return (
     <>
       <Navbar />
       <main style={{ minHeight: 'calc(100vh - 64px)', background: '#F8FAFC', padding: '3rem 1.5rem' }}>
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
-          {!submitted ? (
+
+          {/* ============ INTRO ============ */}
+          {step === 'intro' && (
             <>
               <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                 <h1 style={{ fontWeight: 900, fontSize: 'clamp(1.5rem, 4vw, 2rem)', color: '#0F172A', marginBottom: 8 }}>
@@ -65,11 +127,10 @@ export default function PaymentPage() {
               </div>
 
               <div style={{ background: 'white', borderRadius: 20, padding: '2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #E2E8F0' }}>
-                {/* What's included */}
                 <div style={{ background: '#F8FAFC', borderRadius: 12, padding: '1.25rem', marginBottom: '1.5rem' }}>
                   <p style={{ fontWeight: 700, color: '#0F172A', marginBottom: 10, fontSize: '0.9375rem' }}>✅ Votre accès inclut :</p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                    {['12 modules complets', '150+ heures', 'Forex & Crypto (5 niveaux)', 'Marché des Actions (80h)', 'Gestion de Portefeuille', 'Analyste Financier', 'Quiz interactifs', 'Certificats PDF', 'Mises à jour à vie', 'Accès PWA mobile'].map(item => (
+                    {['12 modules complets', '150+ heures', 'Outils interactifs', 'Graphiques animés', 'Quiz & certificats', 'Mises à jour à vie', 'Accès PWA mobile', 'Support'].map(item => (
                       <div key={item} style={{ fontSize: '0.8125rem', color: '#475569', display: 'flex', gap: 6 }}>
                         <span style={{ color: '#059669' }}>✓</span> {item}
                       </div>
@@ -77,103 +138,116 @@ export default function PaymentPage() {
                   </div>
                 </div>
 
-                {/* Currency selector */}
-                <p style={{ fontWeight: 600, marginBottom: 10, color: '#374151' }}>Choisissez votre cryptomonnaie :</p>
-                <div style={{ display: 'flex', gap: 10, marginBottom: '1.5rem' }}>
-                  {(['USDT', 'BTC'] as const).map(c => (
-                    <button key={c} onClick={() => setCurrency(c)}
-                      style={{
-                        flex: 1, padding: '0.875rem', border: '2px solid', borderRadius: 12, cursor: 'pointer', fontWeight: 700, fontSize: '1rem', transition: 'all 0.2s',
-                        background: currency === c ? '#0070BA' : 'white',
-                        color: currency === c ? 'white' : '#475569',
-                        borderColor: currency === c ? '#0070BA' : '#E2E8F0'
-                      }}>
-                      {c === 'USDT' ? '₮ USDT (TRC-20)' : '₿ Bitcoin'}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Address display */}
-                <div style={{ background: '#F8FAFC', border: '1px dashed #CBD5E1', borderRadius: 12, padding: '1.25rem', marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <p style={{ fontWeight: 600, fontSize: '0.875rem', color: '#374151' }}>
-                      Envoyez {currency === 'USDT' ? '49 USDT' : '~0.00075 BTC'} à cette adresse :
-                    </p>
-                    <button onClick={() => navigator.clipboard.writeText(address)}
-                      style={{ background: '#E8F4FD', color: '#0070BA', border: 'none', padding: '0.25rem 0.75rem', borderRadius: 8, fontSize: '0.8125rem', cursor: 'pointer', fontWeight: 600 }}>
-                      Copier
-                    </button>
-                  </div>
-                  <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: 8, padding: '0.75rem', wordBreak: 'break-all', fontSize: '0.8125rem', fontFamily: 'monospace', color: '#1E293B' }}>
-                    {address}
-                  </div>
-                  {currency === 'USDT' && (
-                    <p style={{ fontSize: '0.75rem', color: '#F59E0B', marginTop: 8 }}>
-                      ⚠️ Réseau TRC-20 (TRON) uniquement. N'utilisez pas ERC-20.
-                    </p>
-                  )}
-                </div>
-
-                {/* TX Hash input */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: 8 }}>
-                    Hash de transaction (après envoi) :
-                  </label>
-                  <input
-                    value={txHash} onChange={e => setTxHash(e.target.value)}
-                    placeholder="Collez ici le hash/TxID de votre transaction"
-                    style={{ width: '100%', padding: '0.75rem 1rem', border: '1.5px solid #E2E8F0', borderRadius: 10, fontSize: '0.875rem', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
-                    onFocus={e => (e.target.style.borderColor = '#0070BA')}
-                    onBlur={e => (e.target.style.borderColor = '#E2E8F0')}
-                  />
-                </div>
-
-                <button
-                  onClick={handleSubmitPayment}
-                  disabled={loading || txHash.length < 20}
-                  className="btn-primary"
-                  style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem', opacity: (loading || txHash.length < 20) ? 0.6 : 1, cursor: (loading || txHash.length < 20) ? 'not-allowed' : 'pointer' }}
-                >
-                  {loading ? '⏳ Traitement...' : '✅ Confirmer mon paiement'}
-                </button>
+                {error && <div style={{ background: '#FEE2E2', color: '#DC2626', padding: '0.75rem 1rem', borderRadius: 10, fontSize: '0.875rem', marginBottom: '1rem' }}>{error}</div>}
 
                 {!user && (
-                  <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem', color: '#64748B' }}>
-                    Vous n'êtes pas connecté.{' '}
-                    <Link href="/login" style={{ color: '#0070BA', fontWeight: 600 }}>Connectez-vous</Link>
-                    {' '}pour que l'accès soit appliqué automatiquement.
-                  </p>
+                  <div style={{ background: '#FEF3C7', color: '#92400E', padding: '0.75rem 1rem', borderRadius: 10, fontSize: '0.875rem', marginBottom: '1rem' }}>
+                    ⚠️ <Link href="/login" style={{ color: '#92400E', fontWeight: 700 }}>Connectez-vous</Link> pour que l'accès soit activé automatiquement après paiement.
+                  </div>
                 )}
-              </div>
 
-              <div style={{ display: 'flex', gap: 12, marginTop: '1.5rem', background: 'white', border: '1px solid #E2E8F0', borderRadius: 12, padding: '1rem 1.25rem' }}>
-                <span style={{ fontSize: 20 }}>🔒</span>
-                <div style={{ fontSize: '0.8125rem', color: '#64748B', lineHeight: 1.5 }}>
-                  <strong style={{ color: '#374151' }}>Paiement 100% sécurisé.</strong>{' '}
-                  La vérification manuelle se fait dans un délai de 2-24h. L'accès est activé dès confirmation de la transaction sur la blockchain.
+                <button onClick={startPayment} disabled={loading} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem', opacity: loading ? 0.6 : 1 }}>
+                  {loading ? '⏳ Génération de l\'adresse...' : '₿ Payer en Bitcoin'}
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: '1rem', justifyContent: 'center' }}>
+                  <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Paiement sécurisé via</span>
+                  <span style={{ color: '#0070BA', fontWeight: 700, fontSize: '0.8125rem' }}>Blockonomics</span>
                 </div>
               </div>
             </>
-          ) : (
+          )}
+
+          {/* ============ PAYING ============ */}
+          {step === 'paying' && payment && (
+            <div style={{ background: 'white', borderRadius: 20, padding: '2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #E2E8F0' }}>
+
+              {/* Status banner */}
+              <div style={{
+                background: status === 'detected' ? '#FEF3C7' : status === 'confirmed' ? '#D1FAE5' : '#E8F4FD',
+                borderRadius: 12, padding: '1rem', marginBottom: '1.5rem', textAlign: 'center'
+              }}>
+                {status === 'pending' && (
+                  <div style={{ color: '#0369A1' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#0070BA', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
+                      <strong>En attente de votre paiement...</strong>
+                    </div>
+                  </div>
+                )}
+                {status === 'detected' && (
+                  <div style={{ color: '#92400E' }}>
+                    🔍 <strong>Transaction détectée !</strong> En attente de confirmation blockchain...
+                  </div>
+                )}
+                {status === 'confirmed' && (
+                  <div style={{ color: '#059669' }}>✅ <strong>Paiement confirmé !</strong></div>
+                )}
+              </div>
+
+              {/* Timer */}
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ color: '#64748B', fontSize: '0.8125rem' }}>Cours valable encore</div>
+                <div style={{ fontWeight: 800, fontSize: '1.5rem', color: timeLeft < 120 ? '#DC2626' : '#0F172A', fontFamily: 'monospace' }}>
+                  {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+                </div>
+              </div>
+
+              {/* QR Code */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ padding: '1rem', background: 'white', borderRadius: 16, border: '2px solid #E2E8F0' }}>
+                  {qrDataUrl && <img src={qrDataUrl} alt="QR Code paiement" style={{ width: 220, height: 220, display: 'block' }} />}
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div style={{ background: '#F8FAFC', borderRadius: 12, padding: '1rem', marginBottom: '1rem', textAlign: 'center' }}>
+                <div style={{ color: '#64748B', fontSize: '0.8125rem', marginBottom: 4 }}>Montant exact à envoyer</div>
+                <div style={{ fontWeight: 900, fontSize: '1.5rem', color: '#0F172A', fontFamily: 'monospace' }}>{payment.btcAmount} BTC</div>
+                <div style={{ color: '#94A3B8', fontSize: '0.75rem' }}>≈ 49 USD · 1 BTC = ${payment.btcPrice.toLocaleString()}</div>
+              </div>
+
+              {/* Address */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.8125rem', color: '#374151', marginBottom: 6 }}>Adresse Bitcoin (unique à votre commande)</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '0.75rem', wordBreak: 'break-all', fontSize: '0.8125rem', fontFamily: 'monospace', color: '#1E293B' }}>
+                    {payment.address}
+                  </div>
+                  <button onClick={copyAddress} style={{ background: copied ? '#22C55E' : '#0070BA', color: 'white', border: 'none', padding: '0 1rem', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>
+                    {copied ? '✓ Copié' : 'Copier'}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '0.875rem', fontSize: '0.8125rem', color: '#1E40AF', lineHeight: 1.5 }}>
+                ℹ️ Scannez le QR code avec votre wallet Bitcoin ou copiez l'adresse. La détection est <strong>automatique</strong> — votre accès s'activera dès confirmation. Aucune action manuelle requise.
+              </div>
+
+              <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.75rem', marginTop: '1rem' }}>
+                🔒 Cette page se met à jour automatiquement toutes les 8 secondes
+              </p>
+            </div>
+          )}
+
+          {/* ============ SUCCESS ============ */}
+          {step === 'success' && (
             <div style={{ background: 'white', borderRadius: 20, padding: '3rem 2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', textAlign: 'center' }}>
               <div style={{ fontSize: 64, marginBottom: '1rem' }}>🎉</div>
-              <h2 style={{ fontWeight: 800, fontSize: '1.5rem', color: '#0F172A', marginBottom: 8 }}>
-                Paiement soumis avec succès !
-              </h2>
+              <h2 style={{ fontWeight: 800, fontSize: '1.5rem', color: '#0F172A', marginBottom: 8 }}>Paiement confirmé !</h2>
               <p style={{ color: '#64748B', lineHeight: 1.7, marginBottom: '2rem' }}>
-                Votre transaction est en cours de vérification. Vous recevrez un email de confirmation et votre accès sera activé sous 2-24 heures.
+                Félicitations ! Votre accès Premium est maintenant <strong>activé</strong>. Vous avez accès à l'intégralité de la formation.
               </p>
-              <div style={{ background: '#D1FAE5', border: '1px solid #A7F3D0', borderRadius: 12, padding: '1rem', marginBottom: '2rem', fontSize: '0.875rem', color: '#065F46' }}>
-                <strong>Transaction enregistrée :</strong> {txHash.substring(0, 20)}...
-              </div>
               <Link href="/dashboard" className="btn-primary" style={{ fontSize: '1rem', padding: '0.875rem 2rem' }}>
-                Accéder à mon tableau de bord →
+                Accéder à ma formation →
               </Link>
             </div>
           )}
+
         </div>
       </main>
       <Footer />
+      <style>{`@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.3 } }`}</style>
     </>
   )
 }
