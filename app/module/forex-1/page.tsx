@@ -105,7 +105,7 @@ export default function Forex1Page() {
           ) : (
             <>
               {/* FULL CONTENT — premium only */}
-              <VideoEmbed videoId="tQMqcM6uPz4" title="Introduction au Forex — Comment fonctionne le marché des changes ?" duration="12 min" description="Une introduction visuelle complète au marché Forex." />
+              <VideoEmbed title="Introduction au Forex — Comment fonctionne le marché des changes ?" searchQuery="introduction au forex marché des changes débutant français" description="Recherche YouTube : introduction au marché des changes." />
 
               <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '2rem 0' }} />
 

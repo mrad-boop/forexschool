@@ -79,7 +79,7 @@ export default function Forex2Page() {
             <PremiumGate hours={6} />
           ) : (
             <>
-              <VideoEmbed videoId="jm5Q7u6hbXE" title="Analyse technique complète pour débutants" duration="18 min" description="Les fondamentaux de l'AT avec des exemples réels." />
+              <VideoEmbed title="Analyse technique complète pour débutants" searchQuery="analyse technique trading débutant français chandeliers" description="Recherche YouTube : analyse technique pour débutants." />
 
               <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '2rem 0' }} />
 
@@ -116,7 +116,7 @@ export default function Forex2Page() {
               <section id="indicators">
                 <h2 style={{ fontWeight: 800, fontSize: '1.5rem', color: '#0F172A', marginBottom: '1rem' }}>Les Indicateurs Techniques</h2>
                 <ConceptCard concepts={indicatorConcepts} />
-                <VideoEmbed videoId="eynxyoKgpng" title="RSI, MACD et Bollinger" duration="22 min" description="Les 3 indicateurs les plus utilisés." />
+                <VideoEmbed title="RSI, MACD et Bandes de Bollinger expliqués" searchQuery="RSI MACD bollinger trading explication français" description="Recherche YouTube : les indicateurs techniques." />
                 <InlineQuiz
                   title="✏️ Quiz — Indicateurs"
                   questions={[

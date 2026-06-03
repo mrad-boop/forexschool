@@ -54,16 +54,17 @@ const quizByModule: Record<string, { q: string; options: string[]; correct: numb
   ],
 }
 
-const videoByModule: Record<string, { id: string; title: string; duration: string }> = {
-  'forex-3': { id: 'NVkBMVlXl8U', title: 'Money Management et Gestion du Risque en Trading', duration: '20 min' },
-  'forex-4': { id: 'YhIu6S2JXRY', title: 'Smart Money Concepts (SMC) — Introduction complète', duration: '28 min' },
-  'forex-5': { id: 'D9IEOSzocXo', title: 'Psychologie du Trading — Maîtriser ses émotions', duration: '16 min' },
-  'crypto-2': { id: 'RqubKSF3eo8', title: 'Analyse On-Chain Bitcoin avec Glassnode', duration: '24 min' },
-  'actions-1': { id: 'p7HKvqRI_Bo', title: 'Introduction à la Bourse pour débutants', duration: '18 min' },
-  'portfolio-1': { id: 'DHt8IKDkAoM', title: 'Construire un portefeuille d\'investissement solide', duration: '22 min' },
-  'portfolio-2': { id: 'Qpgi6PvpBGg', title: 'Analyse Fondamentale : Lire les états financiers', duration: '25 min' },
-  'analyst-1': { id: '8rNiM-XNFjE', title: 'Modélisation Financière Excel — From Scratch', duration: '35 min' },
+const videoByModule: Record<string, { title: string; query: string }> = {
+  'forex-3': { title: 'Money Management et Gestion du Risque en Trading', query: 'money management gestion risque trading français' },
+  'forex-4': { title: 'Smart Money Concepts (SMC) — Introduction', query: 'smart money concept SMC trading français' },
+  'forex-5': { title: 'Psychologie du Trading — Maîtriser ses émotions', query: 'psychologie trading émotions discipline français' },
+  'crypto-2': { title: 'Analyse On-Chain — Métriques Bitcoin', query: 'analyse on-chain bitcoin glassnode français' },
+  'actions-1': { title: 'Introduction à la Bourse pour débutants', query: 'introduction bourse actions débutant français' },
+  'portfolio-1': { title: 'Construire un portefeuille d\'investissement solide', query: 'gestion portefeuille diversification investissement français' },
+  'portfolio-2': { title: 'Analyse Fondamentale : Lire les états financiers', query: 'analyse fondamentale états financiers ratios français' },
+  'analyst-1': { title: 'Modélisation Financière Excel', query: 'modélisation financière excel DCF français' },
 }
+
 
 export default function GenericModulePage() {
   const params = useParams()
@@ -141,7 +142,7 @@ export default function GenericModulePage() {
           {showFull && (
             <>
               {video && (
-                <VideoEmbed videoId={video.id} title={video.title} duration={video.duration} description={`Vidéo du module ${module.title}`} />
+                <VideoEmbed title={video.title} searchQuery={video.query} description="Recherche YouTube sur ce sujet." />
               )}
               {module.id === 'forex-3' && (
                 <div style={{ margin: '1.5rem 0' }}>

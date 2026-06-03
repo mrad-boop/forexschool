@@ -75,7 +75,7 @@ export default function Crypto1Page() {
             <PremiumGate hours={5} />
           ) : (
             <>
-              <VideoEmbed videoId="bBC-nXj3Ng4" title="Bitcoin expliqué en 3 minutes" duration="3 min" description="La vidéo de référence pour comprendre Bitcoin." />
+              <VideoEmbed title="Bitcoin et la blockchain expliqués simplement" searchQuery="bitcoin blockchain expliqué simplement français débutant" description="Recherche YouTube : comprendre Bitcoin." />
 
               <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '2rem 0' }} />
 
