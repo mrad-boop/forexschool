@@ -16,7 +16,11 @@ export default function AdminPanel() {
   const [payments, setPayments] = useState<any[]>([])
   const [modules, setModules] = useState<any[]>([])
   const [settings, setSettings] = useState<Record<string, string>>({})
-  const [tab, setTab] = useState<'users' | 'modules' | 'payments' | 'settings'>('users')
+  const [tab, setTab] = useState<'users' | 'modules' | 'payments' | 'tickets' | 'settings'>('users')
+  const [tickets, setTickets] = useState<any[]>([])
+  const [activeTicket, setActiveTicket] = useState<any>(null)
+  const [ticketMsgs, setTicketMsgs] = useState<any[]>([])
+  const [adminReply, setAdminReply] = useState('')
   const [search, setSearch] = useState('')
   const [message, setMessage] = useState('')
   const supabase = createClient()
@@ -72,6 +76,8 @@ export default function AdminPanel() {
     const { data: p } = await supabase.from('payments').select('*').order('created_at', { ascending: false })
     const { data: m } = await supabase.from('modules').select('*').order('order_index', { ascending: true })
     const { data: st } = await supabase.from('fs_settings').select('*')
+    const { data: tk } = await supabase.from('fs_tickets').select('*').order('updated_at', { ascending: false })
+    if (tk) setTickets(tk)
     if (u) setUsers(u)
     if (p) setPayments(p)
     if (m) setModules(m)
@@ -93,6 +99,24 @@ export default function AdminPanel() {
     setMessage('✅ Paramètre enregistré'); setTimeout(() => setMessage(''), 3000)
   }
   const updateSettingField = (key: string, value: string) => setSettings(prev => ({ ...prev, [key]: value }))
+
+  const openTicket = async (t: any) => {
+    setActiveTicket(t)
+    const { data } = await supabase.from('fs_ticket_messages').select('*').eq('ticket_id', t.id).order('created_at', { ascending: true })
+    if (data) setTicketMsgs(data)
+  }
+  const sendAdminReply = async () => {
+    if (!adminReply.trim() || !activeTicket) return
+    await supabase.from('fs_ticket_messages').insert({ ticket_id: activeTicket.id, sender: 'admin', message: adminReply.trim() })
+    await supabase.from('fs_tickets').update({ status: 'pending', updated_at: new Date().toISOString() }).eq('id', activeTicket.id)
+    setAdminReply('')
+    openTicket(activeTicket); loadData()
+  }
+  const setTicketStatus = async (id: string, status: string) => {
+    await supabase.from('fs_tickets').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
+    if (activeTicket?.id === id) setActiveTicket({ ...activeTicket, status })
+    loadData()
+  }
 
   const logoutAdmin = () => {
     sessionStorage.removeItem('fs_admin_ok')
@@ -210,6 +234,7 @@ export default function AdminPanel() {
             ['users', `👥 Utilisateurs (${users.length})`],
             ['modules', `📚 Modules (${modules.length})`],
             ['payments', `💳 Paiements (${payments.length})`],
+            ['tickets', `🎫 Tickets (${tickets.length})`],
             ['settings', `⚙️ Paramètres`],
           ] as const).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t as any)} style={{
@@ -295,6 +320,53 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {/* TICKETS */}
+        {tab === 'tickets' && (
+          <div style={{ display: 'grid', gridTemplateColumns: activeTicket ? 'minmax(0, 1fr) minmax(0, 1.4fr)' : '1fr', gap: '1rem' }} className="tickets-grid">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {tickets.length === 0 && <div className="card" style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8' }}>Aucun ticket.</div>}
+              {tickets.map(t => (
+                <div key={t.id} onClick={() => openTicket(t)} className="card" style={{ cursor: 'pointer', padding: '1rem', border: activeTicket?.id === t.id ? '2px solid #0070BA' : '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h4 style={{ fontWeight: 700, color: '#0F172A', margin: '0 0 4px', fontSize: '0.875rem' }}>{t.subject}</h4>
+                      <p style={{ color: '#94A3B8', fontSize: '0.75rem', margin: 0 }}>{t.email} · {new Date(t.created_at).toLocaleDateString('fr-FR')}</p>
+                    </div>
+                    <span className={t.status === 'open' ? 'badge-premium' : t.status === 'closed' ? 'badge-free' : 'badge-free'} style={{ fontSize: '0.6875rem' }}>{t.status === 'open' ? '🔵 Ouvert' : t.status === 'pending' ? '🟡 Répondu' : '⚪ Fermé'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {activeTicket && (
+              <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <h4 style={{ fontWeight: 700, color: '#0F172A', margin: 0, fontSize: '0.9375rem' }}>{activeTicket.subject}</h4>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => setTicketStatus(activeTicket.id, 'closed')} style={{ background: '#F1F5F9', color: '#475569', border: 'none', padding: '0.375rem 0.75rem', borderRadius: 8, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Fermer</button>
+                    <button onClick={() => setActiveTicket(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '1.25rem', lineHeight: 1 }}>×</button>
+                  </div>
+                </div>
+                <div style={{ padding: '1rem', maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, background: '#F8FAFC' }}>
+                  {ticketMsgs.map(m => (
+                    <div key={m.id} style={{ display: 'flex', justifyContent: m.sender === 'admin' ? 'flex-end' : 'flex-start' }}>
+                      <div style={{ maxWidth: '85%', background: m.sender === 'admin' ? '#0070BA' : 'white', color: m.sender === 'admin' ? 'white' : '#1E293B', padding: '0.625rem 0.875rem', borderRadius: 12, border: m.sender === 'admin' ? 'none' : '1px solid #E2E8F0', fontSize: '0.8125rem', lineHeight: 1.5 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.625rem', opacity: 0.7, marginBottom: 2 }}>{m.sender === 'admin' ? '🎧 Vous (Admin)' : '👤 Client'}</div>
+                        {m.message}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding: '0.75rem', borderTop: '1px solid #E2E8F0', display: 'flex', gap: 8 }}>
+                  <input value={adminReply} onChange={e => setAdminReply(e.target.value)} placeholder="Répondre au client..." onKeyDown={e => e.key === 'Enter' && sendAdminReply()}
+                    style={{ flex: 1, padding: '0.625rem 0.875rem', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box' }} />
+                  <button onClick={sendAdminReply} disabled={!adminReply.trim()} className="btn-primary" style={{ padding: '0 1rem', fontSize: '0.8125rem', opacity: !adminReply.trim() ? 0.5 : 1 }}>Envoyer</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* SETTINGS */}
         {tab === 'settings' && (
           <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -321,6 +393,18 @@ export default function AdminPanel() {
           </div>
         )}
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .tickets-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          table { font-size: 0.8125rem; }
+          th, td { padding: 0.5rem 0.625rem !important; }
+        }
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+      `}</style>
     </div>
   )
 }

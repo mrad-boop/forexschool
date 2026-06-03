@@ -41,6 +41,7 @@ export default function Navbar() {
             <>
               <Link href="/dashboard" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>Dashboard</Link>
               <Link href="/profile" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>👤 Profil</Link>
+              <Link href="/support" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>🎫 Support</Link>
               <button onClick={handleLogout} style={{ color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.9375rem' }}>
                 Déconnexion
               </button>
@@ -68,6 +69,7 @@ export default function Navbar() {
               <>
                 <Link href="/dashboard" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>Dashboard</Link>
                 <Link href="/profile" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>👤 Profil</Link>
+                <Link href="/support" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>🎫 Support</Link>
                 <button onClick={() => { setMenuOpen(false); handleLogout() }} style={{ color: '#DC2626', background: '#FEE2E2', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '0.75rem', borderRadius: 10, fontSize: '0.9375rem', textAlign: 'center' }}>
                   Déconnexion
                 </button>
