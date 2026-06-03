@@ -11,6 +11,7 @@ import ProgressSection from '@/components/modules/ProgressSection'
 import VideoEmbed from '@/components/modules/VideoEmbed'
 import PremiumGate from '@/components/modules/PremiumGate'
 import { usePremium } from '@/components/modules/usePremium'
+import { useModuleVideo } from '@/components/modules/useModuleVideo'
 
 const sections = [
   { id: 'intro', title: "Qu'est-ce que le Forex ?", duration: '20 min' },
@@ -34,6 +35,7 @@ const conceptsData = [
 export default function Forex1Page() {
   const status = usePremium()
   const isPremium = status === 'premium'
+  const adminVideo = useModuleVideo('forex-1')
 
   return (
     <>
@@ -105,7 +107,7 @@ export default function Forex1Page() {
           ) : (
             <>
               {/* FULL CONTENT — premium only */}
-              <VideoEmbed title="Introduction au Forex — Comment fonctionne le marché des changes ?" searchQuery="introduction au forex marché des changes débutant français" description="Recherche YouTube : introduction au marché des changes." />
+              <VideoEmbed videoUrl={adminVideo?.url} title={adminVideo?.title || "Introduction au Forex — Comment fonctionne le marché des changes ?"} searchQuery="introduction au forex marché des changes débutant français" description="Vidéo explicative du module." />
 
               <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '2rem 0' }} />
 

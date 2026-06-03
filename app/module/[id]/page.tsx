@@ -10,6 +10,7 @@ import InlineQuiz from '@/components/modules/InlineQuiz'
 import ProgressSection from '@/components/modules/ProgressSection'
 import RiskCalculator from '@/components/modules/RiskCalculator'
 import VideoEmbed from '@/components/modules/VideoEmbed'
+import { useModuleVideo } from '@/components/modules/useModuleVideo'
 import PremiumGate from '@/components/modules/PremiumGate'
 import ConceptCard from '@/components/modules/ConceptCard'
 
@@ -72,6 +73,7 @@ export default function GenericModulePage() {
   const supabase = createClient()
 
   const module = modulesData.find(m => m.id === params.id)
+  const adminVideo = useModuleVideo((params.id as string) || '')
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }: { data: { user: any } }) => {
@@ -141,8 +143,8 @@ export default function GenericModulePage() {
           {/* FULL CONTENT — premium only */}
           {showFull && (
             <>
-              {video && (
-                <VideoEmbed title={video.title} searchQuery={video.query} description="Recherche YouTube sur ce sujet." />
+              {(video || adminVideo) && (
+                <VideoEmbed videoUrl={adminVideo?.url} title={adminVideo?.title || video?.title || module.title} searchQuery={video?.query || module.title} description="Vidéo explicative du module." />
               )}
               {module.id === 'forex-3' && (
                 <div style={{ margin: '1.5rem 0' }}>

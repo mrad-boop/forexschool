@@ -90,7 +90,7 @@ export default function AdminPanel() {
     setMessage(`✅ Statut mis à jour : ${newStatus}`); loadData(); setTimeout(() => setMessage(''), 3000)
   }
   const saveModule = async (mod: any) => {
-    await supabase.from('modules').update({ title: mod.title, description: mod.description, type: mod.type, category: mod.category, level: mod.level, duration_hours: mod.duration_hours }).eq('id', mod.id)
+    await supabase.from('modules').update({ title: mod.title, description: mod.description, type: mod.type, category: mod.category, level: mod.level, duration_hours: mod.duration_hours, video_url: mod.video_url, video_title: mod.video_title }).eq('id', mod.id)
     setMessage('✅ Module enregistré'); setTimeout(() => setMessage(''), 3000)
   }
   const updateModuleField = (id: string, field: string, value: any) => setModules(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m))
@@ -290,6 +290,15 @@ export default function AdminPanel() {
                     <div><label style={labelStyle}>Catégorie</label><input value={m.category} onChange={e => updateModuleField(m.id, 'category', e.target.value)} style={inputStyle} /></div>
                     <div><label style={labelStyle}>Niveau</label><input type="number" value={m.level} onChange={e => updateModuleField(m.id, 'level', Number(e.target.value))} style={inputStyle} /></div>
                     <div><label style={labelStyle}>Heures</label><input type="number" value={m.duration_hours} onChange={e => updateModuleField(m.id, 'duration_hours', Number(e.target.value))} style={inputStyle} /></div>
+                  </div>
+                  <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: 12, marginTop: 4 }}>
+                    <label style={labelStyle}>🎥 Titre de la vidéo YouTube</label>
+                    <input value={m.video_title || ''} onChange={e => updateModuleField(m.id, 'video_title', e.target.value)} placeholder="Ex: Introduction au Forex pour débutants" style={{ ...inputStyle, marginBottom: 8 }} />
+                    <label style={labelStyle}>🔗 Lien YouTube (URL complète)</label>
+                    <input value={m.video_url || ''} onChange={e => updateModuleField(m.id, 'video_url', e.target.value)} placeholder="https://www.youtube.com/watch?v=..." style={inputStyle} />
+                    {m.video_url && (
+                      <a href={m.video_url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 6, color: '#0070BA', fontSize: '0.75rem', fontWeight: 600 }}>↗ Tester le lien</a>
+                    )}
                   </div>
                 </div>
               </div>

@@ -10,6 +10,7 @@ import ProgressSection from '@/components/modules/ProgressSection'
 import VideoEmbed from '@/components/modules/VideoEmbed'
 import PremiumGate from '@/components/modules/PremiumGate'
 import { usePremium } from '@/components/modules/usePremium'
+import { useModuleVideo } from '@/components/modules/useModuleVideo'
 
 const sections = [
   { id: 'intro', title: "Principes de l'analyse technique", duration: '15 min' },
@@ -30,6 +31,7 @@ const indicatorConcepts = [
 export default function Forex2Page() {
   const status = usePremium()
   const isPremium = status === 'premium'
+  const adminVideo = useModuleVideo('forex-2')
 
   return (
     <>

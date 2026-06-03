@@ -9,6 +9,7 @@ import ProgressSection from '@/components/modules/ProgressSection'
 import VideoEmbed from '@/components/modules/VideoEmbed'
 import PremiumGate from '@/components/modules/PremiumGate'
 import { usePremium } from '@/components/modules/usePremium'
+import { useModuleVideo } from '@/components/modules/useModuleVideo'
 
 const sections = [
   { id: 'satoshi', title: "La révolution Bitcoin", duration: '20 min' },
@@ -29,6 +30,7 @@ const cryptoConcepts = [
 export default function Crypto1Page() {
   const status = usePremium()
   const isPremium = status === 'premium'
+  const adminVideo = useModuleVideo('crypto-1')
 
   return (
     <>
@@ -75,7 +77,7 @@ export default function Crypto1Page() {
             <PremiumGate hours={5} />
           ) : (
             <>
-              <VideoEmbed title="Bitcoin et la blockchain expliqués simplement" searchQuery="bitcoin blockchain expliqué simplement français débutant" description="Recherche YouTube : comprendre Bitcoin." />
+              <VideoEmbed videoUrl={adminVideo?.url} title={adminVideo?.title || "Bitcoin et la blockchain expliqués simplement"} searchQuery="bitcoin blockchain expliqué simplement français débutant" description="Vidéo explicative du module." />
 
               <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '2rem 0' }} />
 
