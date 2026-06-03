@@ -1,16 +1,32 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [loggedIn, setLoggedIn] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => setLoggedIn(!!user))
+    supabase.auth.getUser().then(async ({ data: { user } }: { data: { user: any } }) => {
+      setLoggedIn(!!user)
+      if (user) {
+        const { data } = await supabase.from('users').select('is_admin').eq('id', user.id).single()
+        setIsAdmin(!!data?.is_admin)
+      }
+    })
   }, [])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setLoggedIn(false)
+    router.push('/')
+    router.refresh()
+  }
 
   return (
     <nav style={{ position: 'sticky', top: 0, zIndex: 50, background: 'white', borderBottom: '1px solid #E2E8F0', boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
@@ -24,22 +40,23 @@ export default function Navbar() {
           </span>
         </Link>
 
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }} className="desktop-nav">
+        <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }} className="desktop-nav">
           <Link href="/#modules" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>Modules</Link>
-          <Link href="/#pricing" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>Tarifs</Link>
           {loggedIn ? (
             <>
               <Link href="/dashboard" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>Dashboard</Link>
-              <Link href="/profile" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-                👤 Profil
-              </Link>
+              <Link href="/profile" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>👤 Profil</Link>
+              {isAdmin && <Link href="/forexschool-admin-2026" style={{ color: '#7C3AED', textDecoration: 'none', fontWeight: 700, fontSize: '0.9375rem' }}>⚙️ Admin</Link>}
+              <button onClick={handleLogout} style={{ color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.9375rem' }}>
+                Déconnexion
+              </button>
             </>
           ) : (
-            <Link href="/login" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>Connexion</Link>
+            <>
+              <Link href="/login" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, fontSize: '0.9375rem' }}>Connexion</Link>
+              <Link href="/payment" className="btn-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.25rem' }}>Commencer – 49 USDT</Link>
+            </>
           )}
-          <Link href="/payment" className="btn-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.25rem' }}>
-            {loggedIn ? 'Passer Premium' : 'Commencer – 49 USDT'}
-          </Link>
         </div>
 
         <button onClick={() => setMenuOpen(!menuOpen)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 8 }} className="mobile-menu-btn">
@@ -53,28 +70,26 @@ export default function Navbar() {
         <div style={{ padding: '1rem 1.5rem 1.5rem', borderTop: '1px solid #E2E8F0', background: 'white' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Link href="/#modules" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>Modules</Link>
-            <Link href="/#pricing" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>Tarifs</Link>
             {loggedIn ? (
               <>
                 <Link href="/dashboard" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>Dashboard</Link>
                 <Link href="/profile" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>👤 Profil</Link>
+                {isAdmin && <Link href="/forexschool-admin-2026" style={{ color: '#7C3AED', textDecoration: 'none', fontWeight: 700, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>⚙️ Admin</Link>}
+                <button onClick={() => { setMenuOpen(false); handleLogout() }} style={{ color: '#DC2626', background: '#FEE2E2', border: 'none', cursor: 'pointer', fontWeight: 600, padding: '0.75rem', borderRadius: 10, fontSize: '0.9375rem', textAlign: 'center' }}>
+                  Déconnexion
+                </button>
               </>
             ) : (
-              <Link href="/login" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>Connexion</Link>
+              <>
+                <Link href="/login" style={{ color: '#475569', textDecoration: 'none', fontWeight: 500, padding: '0.5rem 0' }} onClick={() => setMenuOpen(false)}>Connexion</Link>
+                <Link href="/payment" className="btn-primary" style={{ textAlign: 'center', fontSize: '0.9375rem' }} onClick={() => setMenuOpen(false)}>Commencer – 49 USDT</Link>
+              </>
             )}
-            <Link href="/payment" className="btn-primary" style={{ textAlign: 'center', fontSize: '0.9375rem' }} onClick={() => setMenuOpen(false)}>
-              {loggedIn ? 'Passer Premium' : 'Commencer – 49 USDT'}
-            </Link>
           </div>
         </div>
       )}
 
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: block !important; }
-        }
-      `}</style>
+      <style>{`@media (max-width: 768px) { .desktop-nav { display: none !important; } .mobile-menu-btn { display: block !important; } }`}</style>
     </nav>
   )
 }

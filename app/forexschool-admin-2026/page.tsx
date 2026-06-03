@@ -29,7 +29,9 @@ export default function AdminPanel() {
   const [authState, setAuthState] = useState<'checking' | 'denied' | 'granted'>('checking')
   const [users, setUsers] = useState<UserRow[]>([])
   const [payments, setPayments] = useState<PaymentRow[]>([])
-  const [tab, setTab] = useState<'users' | 'payments'>('users')
+  const [tab, setTab] = useState<'users' | 'payments' | 'modules' | 'settings'>('users')
+  const [modules, setModules] = useState<any[]>([])
+  const [settings, setSettings] = useState<Record<string, string>>({})
   const [search, setSearch] = useState('')
   const [message, setMessage] = useState('')
   const supabase = createClient()
@@ -53,8 +55,35 @@ export default function AdminPanel() {
   const loadData = async () => {
     const { data: u } = await supabase.from('users').select('*').order('created_at', { ascending: false })
     const { data: p } = await supabase.from('payments').select('*').order('created_at', { ascending: false })
+    const { data: m } = await supabase.from('modules').select('*').order('order_index', { ascending: true })
+    const { data: st } = await supabase.from('fs_settings').select('*')
     if (u) setUsers(u)
     if (p) setPayments(p)
+    if (m) setModules(m)
+    if (st) { const obj: Record<string,string> = {}; st.forEach((r:any) => obj[r.key] = r.value); setSettings(obj) }
+  }
+
+  const saveModule = async (mod: any) => {
+    await supabase.from('modules').update({
+      title: mod.title, description: mod.description, type: mod.type,
+      category: mod.category, level: mod.level, duration_hours: mod.duration_hours
+    }).eq('id', mod.id)
+    setMessage('✅ Module enregistré : ' + mod.title)
+    setTimeout(() => setMessage(''), 3000)
+  }
+
+  const updateModuleField = (id: string, field: string, value: any) => {
+    setModules(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m))
+  }
+
+  const saveSetting = async (key: string, value: string) => {
+    await supabase.from('fs_settings').upsert({ key, value, updated_at: new Date().toISOString() })
+    setMessage('✅ Paramètre enregistré')
+    setTimeout(() => setMessage(''), 3000)
+  }
+
+  const updateSettingField = (key: string, value: string) => {
+    setSettings(prev => ({ ...prev, [key]: value }))
   }
 
   const togglePremium = async (userId: string, current: string) => {
@@ -141,12 +170,17 @@ export default function AdminPanel() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: '1.5rem' }}>
-          {(['users', 'payments'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
+          {([
+            ['users', `👥 Utilisateurs (${users.length})`],
+            ['modules', `📚 Modules (${modules.length})`],
+            ['payments', `💳 Paiements (${payments.length})`],
+            ['settings', `⚙️ Paramètres`],
+          ] as const).map(([t, label]) => (
+            <button key={t} onClick={() => setTab(t as any)} style={{
               padding: '0.625rem 1.25rem', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 600,
-              background: tab === t ? '#0070BA' : '#1E293B', color: tab === t ? 'white' : '#94A3B8'
+              background: tab === t ? '#0070BA' : '#1E293B', color: tab === t ? 'white' : '#94A3B8', whiteSpace: 'nowrap'
             }}>
-              {t === 'users' ? `👥 Utilisateurs (${users.length})` : `💳 Paiements (${payments.length})`}
+              {label}
             </button>
           ))}
         </div>
@@ -195,6 +229,86 @@ export default function AdminPanel() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* MODULES EDITOR */}
+        {tab === 'modules' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {modules.map(m => (
+              <div key={m.id} style={{ background: '#1E293B', borderRadius: 14, border: '1px solid #334155', padding: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#64748B' }}>{m.id}</span>
+                  <button onClick={() => saveModule(m)} style={{ background: '#0070BA', color: 'white', border: 'none', padding: '0.375rem 1rem', borderRadius: 8, cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600 }}>💾 Enregistrer</button>
+                </div>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: 4 }}>Titre</label>
+                    <input value={m.title} onChange={e => updateModuleField(m.id, 'title', e.target.value)}
+                      style={{ width: '100%', padding: '0.5rem 0.75rem', background: '#0F172A', border: '1px solid #334155', borderRadius: 8, color: 'white', fontSize: '0.875rem', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: 4 }}>Description</label>
+                    <textarea value={m.description} onChange={e => updateModuleField(m.id, 'description', e.target.value)} rows={2}
+                      style={{ width: '100%', padding: '0.5rem 0.75rem', background: '#0F172A', border: '1px solid #334155', borderRadius: 8, color: 'white', fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: 4 }}>Type</label>
+                      <select value={m.type} onChange={e => updateModuleField(m.id, 'type', e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', background: '#0F172A', border: '1px solid #334155', borderRadius: 8, color: 'white', fontSize: '0.875rem' }}>
+                        <option value="free">Gratuit</option>
+                        <option value="premium">Premium</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: 4 }}>Catégorie</label>
+                      <input value={m.category} onChange={e => updateModuleField(m.id, 'category', e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem 0.75rem', background: '#0F172A', border: '1px solid #334155', borderRadius: 8, color: 'white', fontSize: '0.875rem', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: 4 }}>Niveau</label>
+                      <input type="number" value={m.level} onChange={e => updateModuleField(m.id, 'level', Number(e.target.value))}
+                        style={{ width: '100%', padding: '0.5rem 0.75rem', background: '#0F172A', border: '1px solid #334155', borderRadius: 8, color: 'white', fontSize: '0.875rem', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: 4 }}>Heures</label>
+                      <input type="number" value={m.duration_hours} onChange={e => updateModuleField(m.id, 'duration_hours', Number(e.target.value))}
+                        style={{ width: '100%', padding: '0.5rem 0.75rem', background: '#0F172A', border: '1px solid #334155', borderRadius: 8, color: 'white', fontSize: '0.875rem', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* SETTINGS EDITOR */}
+        {tab === 'settings' && (
+          <div style={{ background: '#1E293B', borderRadius: 14, border: '1px solid #334155', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {[
+              { key: 'price_usdt', label: 'Prix actuel (USDT)', type: 'text' },
+              { key: 'price_original', label: 'Prix barré (USDT)', type: 'text' },
+              { key: 'hero_title', label: 'Titre principal (accueil)', type: 'text' },
+              { key: 'hero_subtitle', label: 'Sous-titre (accueil)', type: 'textarea' },
+              { key: 'btc_address', label: 'Adresse Bitcoin (réception paiements)', type: 'text' },
+              { key: 'usdt_address', label: 'Adresse USDT TRC-20', type: 'text' },
+              { key: 'blockonomics_key', label: 'Clé API Blockonomics', type: 'text' },
+            ].map(f => (
+              <div key={f.key}>
+                <label style={{ fontSize: '0.8125rem', color: '#94A3B8', display: 'block', marginBottom: 6, fontWeight: 600 }}>{f.label}</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {f.type === 'textarea' ? (
+                    <textarea value={settings[f.key] || ''} onChange={e => updateSettingField(f.key, e.target.value)} rows={2}
+                      style={{ flex: 1, padding: '0.625rem 0.875rem', background: '#0F172A', border: '1px solid #334155', borderRadius: 8, color: 'white', fontSize: '0.875rem', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }} />
+                  ) : (
+                    <input value={settings[f.key] || ''} onChange={e => updateSettingField(f.key, e.target.value)}
+                      style={{ flex: 1, padding: '0.625rem 0.875rem', background: '#0F172A', border: '1px solid #334155', borderRadius: 8, color: 'white', fontSize: '0.875rem', boxSizing: 'border-box' }} />
+                  )}
+                  <button onClick={() => saveSetting(f.key, settings[f.key] || '')} style={{ background: '#0070BA', color: 'white', border: 'none', padding: '0 1rem', borderRadius: 8, cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap' }}>💾</button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
