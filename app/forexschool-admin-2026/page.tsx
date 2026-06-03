@@ -51,7 +51,7 @@ export default function AdminPanel() {
       const res = await fetch('/api/admin/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUserId, passcode })
+        body: JSON.stringify({ passcode })
       })
       const data = await res.json()
       if (data.ok) {
