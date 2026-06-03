@@ -1,26 +1,11 @@
 import { createBrowserClient } from '@supabase/ssr'
 
+// Supabase project credentials.
+// The anon key is PUBLIC by design — it is safe to ship in client code.
+// All data access is protected server-side by Row Level Security (RLS).
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zixbpwwjweonianynvsq.supabase.co'
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppeGJwd3dqd2VvbmlhbnludnNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTYyOTQsImV4cCI6MjA5NTgzMjI5NH0.5ndkLhjM5v8xtW-BfenVwPEdQlQs_a6DWXXffCRD0N8'
+
 export function createClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!url || !key) {
-    return {
-      auth: {
-        getUser: async () => ({ data: { user: null }, error: null }),
-        signInWithPassword: async () => ({ error: { message: 'Configuration Supabase manquante' } }),
-        signUp: async () => ({ error: { message: 'Configuration Supabase manquante' } }),
-        signOut: async () => ({ error: null }),
-        updateUser: async () => ({ error: { message: 'Configuration Supabase manquante' } }),
-      },
-      from: () => ({
-        select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
-        insert: async () => ({ error: null }),
-        update: () => ({ eq: async () => ({ error: null }) }),
-        upsert: async () => ({ error: null }),
-      })
-    } as any
-  }
-
-  return createBrowserClient(url, key)
+  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 }
