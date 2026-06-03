@@ -117,7 +117,7 @@ export default function PaymentPage() {
                   <>
                     <div style={{ background: '#F8FAFC', borderRadius: 12, padding: '1.25rem', marginBottom: '1.5rem' }}>
                       <p style={{ fontWeight: 700, color: '#0F172A', marginBottom: 10, fontSize: '0.9375rem' }}>✅ Votre accès inclut :</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <div className="stack-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                         {['12 modules complets', '150+ heures', 'Outils interactifs', 'Quiz & certificats', 'Mises à jour à vie', 'Accès mobile'].map(item => (
                           <div key={item} style={{ fontSize: '0.8125rem', color: '#475569', display: 'flex', gap: 6 }}><span style={{ color: '#059669' }}>✓</span> {item}</div>
                         ))}

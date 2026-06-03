@@ -100,7 +100,7 @@ export default function LoginPage() {
 
               {/* SIGNUP: First + Last name */}
               {tab === 'signup' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="stack-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
                     <label style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginBottom: 6 }}>Prénom</label>
                     <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Mohamed"

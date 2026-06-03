@@ -119,3 +119,57 @@ body {
   .section-title { font-size: 1.5rem; }
   .section-subtitle { font-size: 1rem; }
 }
+
+/* ============ RESPONSIVE SYSTEM ============ */
+
+/* Prevent horizontal overflow everywhere */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  max-width: 100%;
+}
+
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tables scroll horizontally inside their container instead of breaking layout */
+table {
+  max-width: 100%;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .section-title { font-size: 1.75rem; }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .section-title { font-size: 1.5rem; }
+  .section-subtitle { font-size: 1rem; }
+  .card { padding: 1.25rem; }
+
+  /* Stack any 2-col grids */
+  .stack-mobile { grid-template-columns: 1fr !important; }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .card { padding: 1rem; border-radius: 14px; }
+  .btn-primary, .btn-secondary {
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    width: 100%;
+    justify-content: center;
+  }
+  .section-title { font-size: 1.375rem; }
+}
+
+/* Thin scrollbars */
+::-webkit-scrollbar { height: 6px; width: 6px; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }

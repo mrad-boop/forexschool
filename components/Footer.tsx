@@ -40,12 +40,12 @@ export default function Footer() {
           <div>
             <h4 style={{ color: 'white', fontWeight: 700, marginBottom: '1rem', fontSize: '0.9375rem' }}>Paiement sécurisé</h4>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['₿ Bitcoin', '₮ USDT', '⟠ ETH'].map(c => (
+              {['₮ USDT (BEP-20)'].map(c => (
                 <span key={c} style={{ background: '#1E293B', padding: '0.35rem 0.75rem', borderRadius: 8, fontSize: '0.8125rem', color: '#CBD5E1' }}>{c}</span>
               ))}
             </div>
             <p style={{ fontSize: '0.8125rem', marginTop: '1rem', lineHeight: 1.5 }}>
-              Paiement unique · Accès à vie · 100% sécurisé via Blockonomics
+              Paiement unique · Accès à vie · 100% sécurisé
             </p>
           </div>
         </div>

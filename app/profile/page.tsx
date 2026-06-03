@@ -131,7 +131,7 @@ export default function ProfilePage() {
             <h2 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0F172A', marginBottom: '1.5rem' }}>👤 Informations personnelles</h2>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="stack-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={labelStyle}>Prénom</label>
                   <input style={inputStyle} value={profile.first_name} onChange={e => set('first_name', e.target.value)} placeholder="Mohamed" />
@@ -148,7 +148,7 @@ export default function ProfilePage() {
                 <p style={{ color: '#94A3B8', fontSize: '0.75rem', marginTop: 4 }}>L'email ne peut pas être modifié</p>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="stack-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={labelStyle}>Téléphone</label>
                   <input style={inputStyle} value={profile.phone} onChange={e => set('phone', e.target.value)} placeholder="+216 XX XXX XXX" />

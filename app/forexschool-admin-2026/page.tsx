@@ -213,7 +213,7 @@ export default function AdminPanel() {
         {message && <div style={{ background: '#D1FAE5', border: '1px solid #6EE7B7', color: '#059669', padding: '0.75rem 1rem', borderRadius: 10, marginBottom: '1.5rem', fontWeight: 500 }}>{message}</div>}
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '2rem' }}>
           {[
             { label: 'Utilisateurs', value: stats.total, icon: '👥', color: '#0070BA' },
             { label: 'Membres Premium', value: stats.premium, icon: '⭐', color: '#F59E0B' },
@@ -229,7 +229,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
           {([
             ['users', `👥 Utilisateurs (${users.length})`],
             ['modules', `📚 Modules (${modules.length})`],
@@ -251,7 +251,7 @@ export default function AdminPanel() {
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Rechercher par nom ou email..." style={{ ...inputStyle, padding: '0.625rem 1rem' }} />
             </div>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
                 <thead><tr style={{ background: '#F8FAFC' }}>
                   {['Nom', 'Email', 'Pays', 'Statut', 'Inscrit', 'Action'].map(h => <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 700 }}>{h}</th>)}
                 </tr></thead>
@@ -301,7 +301,7 @@ export default function AdminPanel() {
         {tab === 'payments' && (
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
                 <thead><tr style={{ background: '#F8FAFC' }}>{['Date', 'Montant', 'Devise', 'Réf', 'Statut'].map(h => <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 700 }}>{h}</th>)}</tr></thead>
                 <tbody>
                   {payments.map(p => (
@@ -375,9 +375,7 @@ export default function AdminPanel() {
               { key: 'price_original', label: 'Prix barré (USDT)', type: 'text' },
               { key: 'hero_title', label: 'Titre principal (accueil)', type: 'text' },
               { key: 'hero_subtitle', label: 'Sous-titre (accueil)', type: 'textarea' },
-              { key: 'btc_address', label: 'Adresse Bitcoin (réception)', type: 'text' },
-              { key: 'usdt_address', label: 'Adresse USDT TRC-20', type: 'text' },
-              { key: 'blockonomics_key', label: 'Clé API Blockonomics', type: 'text' },
+              { key: 'usdt_bep20_address', label: 'Adresse USDT BEP-20 (réception paiements)', type: 'text' },
               { key: 'admin_passcode', label: '🔑 Code administrateur', type: 'text' },
             ].map(f => (
               <div key={f.key}>

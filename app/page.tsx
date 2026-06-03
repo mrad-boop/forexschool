@@ -104,7 +104,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
               {freeModules.map(m => (
                 <ModuleCard key={m.id} module={m} userStatus={null} />
               ))}
@@ -147,7 +147,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
               {features.map(f => (
                 <div key={f.title} className="card" style={{ padding: '2rem' }}>
                   <div style={{ fontSize: 36, marginBottom: '1rem' }}>{f.icon}</div>
@@ -169,7 +169,7 @@ export default function Home() {
               Pas d'abonnement, pas de frais cachés. Payez une fois et accédez à tout pour toujours.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
               {/* Free Plan */}
               <div className="card" style={{ padding: '2rem' }}>
                 <h3 style={{ fontWeight: 700, fontSize: '1.125rem', marginBottom: 8 }}>Accès Gratuit</h3>
@@ -234,7 +234,7 @@ export default function Home() {
             <h2 className="section-title" style={{ marginBottom: '3rem' }}>
               Ce que disent nos étudiants
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
               {[
                 { name: 'Ahmed B.', country: '🇹🇳 Tunis', text: 'Formation excellente ! En 3 mois, j\'ai compris les marchés financiers mieux qu\'en 2 ans de lecture autonome. Le module sur le SMC est un chef-d\'œuvre.', stars: 5 },
                 { name: 'Fatima K.', country: '🇲🇦 Casablanca', text: 'J\'ai passé ma certification et décroché un stage en gestion de fonds. Le rapport qualité/prix est imbattable. Sérieusement, 49$ pour ce contenu c\'est cadeau.', stars: 5 },
